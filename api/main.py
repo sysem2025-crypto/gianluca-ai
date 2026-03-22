@@ -137,6 +137,6 @@ async def history(user: str, _: str = Security(verify_api_key)):
 async def health():
     return {"status": "ok", "timestamp": datetime.now().isoformat()}
 
-# Entry point per Vercel
-handler = app
+from mangum import Mangum
+handler = Mangum(app)
     
