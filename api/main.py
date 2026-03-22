@@ -3,8 +3,8 @@ from flask_cors import CORS
 from datetime import datetime
 import os
 import json
-import urllib.request
 import traceback
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -59,26 +59,23 @@ def ask_groq(message, history=[]):
     messages += history
     messages.append({"role": "user", "content": message})
 
-    payload = json.dumps({
-        "model": "llama-3.3-70b-versatile",
-        "messages": messages,
-        "max_tokens": 200,
-        "temperature": 0.7
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        "https://api.groq.com/openai/v1/chat/completions",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-    )
-
     try:
-        with urllib.request.urlopen(req, timeout=10) as res:
-            data = json.loads(res.read())
-            return data["choices"][0]["message"]["content"].strip()
+        res = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": messages,
+                "max_tokens": 200,
+                "temperature": 0.7
+            },
+            timeout=10
+        )
+        res.raise_for_status()
+        return res.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
         traceback.print_exc()
         return f"Errore: {type(e).__name__}: {str(e)}"
