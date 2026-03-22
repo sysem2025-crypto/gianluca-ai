@@ -1,142 +1,112 @@
-from fastapi import FastAPI, HTTPException, Security
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from datetime import datetime
 import os
 import random
 from dotenv import load_dotenv
 
-try:
-    from database import (
-        get_profile_info,
-        get_full_profile,
-        save_conversation,
-        get_history
-    )
-except ImportError:
-    from api.database import (
-        get_profile_info,
-        get_full_profile,
-        save_conversation,
-        get_history
-    )
-
 load_dotenv()
 
-app = FastAPI(title="Gianluca AI", version="1.0.0")
+app = Flask(__name__)
 
-# ✅ CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["POST", "GET"],
-    allow_headers=["*"],
-)
+# CORS
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5500,null").split(",")
+CORS(app, origins=ALLOWED_ORIGINS)
 
-# ✅ API Key
-API_KEY = os.getenv("API_KEY", "dev-key-locale")
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+# API Key
+API_KEY = os.getenv("API_KEY", "chiave-segreta-cambiami-123")
 
-def verify_api_key(key: str = Security(api_key_header)):
+try:
+    from database import get_profile_info, get_full_profile, save_conversation, get_history
+except ImportError:
+    from api.database import get_profile_info, get_full_profile, save_conversation, get_history
+
+def check_api_key():
+    key = request.headers.get("X-API-Key")
     if key != API_KEY:
-        raise HTTPException(status_code=403, detail="API Key non valida")
-    return key
-
-# ─────────────────────────────────────────
-# MODELLI
-# ─────────────────────────────────────────
-
-class Message(BaseModel):
-    text: str
-    user: str = "Anonimo"
-
-class ChatResponse(BaseModel):
-    response: str
-    timestamp: str
-
-# ─────────────────────────────────────────
-# LOGICA RISPOSTE
-# ─────────────────────────────────────────
+        return jsonify({"detail": "API Key non valida"}), 403
+    return None
 
 KEYWORD_MAP = {
-    "nome":             ["nome", "chiami", "sei gianluca"],
-    "eta":              ["età", "anni", "quanti anni"],
-    "citta":            ["città", "abiti", "vivi", "abiti"],
-    "lavoro":           ["lavoro", "professione", "fai nella vita", "mestiere"],
-    "linguaggi":        ["linguaggi", "programmi", "coding", "codice"],
-    "hobby":            ["hobby", "tempo libero", "passioni", "interessi", "interesse"],
-    "sport":            ["sport", "palestra", "allenamento"],
-    "musica":           ["musica", "ascolti", "cantante"],
-    "cibo_preferito":   ["cibo", "mangi", "piatto", "preferisci mangiare"],
-    "film_preferito":   ["film", "cinema", "pellicola"],
-    "serie_preferita":  ["serie", "tv", "netflix"],
-    "carattere":        ["carattere", "personalità", "tipo di persona"],
-    "valori":           ["valori", "credi", "importante per te"],
-    "obiettivo":        ["obiettivo", "sogno", "vuoi fare"],
+    "nome":           ["nome", "chiami", "sei gianluca"],
+    "eta":            ["età", "anni", "quanti anni"],
+    "citta":          ["città", "abiti", "vivi"],
+    "lavoro":         ["lavoro", "professione", "fai nella vita", "mestiere"],
+    "linguaggi":      ["linguaggi", "programmi", "coding", "codice"],
+    "hobby":          ["hobby", "tempo libero", "passioni", "interessi"],
+    "sport":          ["sport", "palestra", "allenamento"],
+    "musica":         ["musica", "ascolti", "cantante"],
+    "cibo_preferito": ["cibo", "mangi", "piatto"],
+    "film_preferito": ["film", "cinema"],
+    "serie_preferita":["serie", "tv", "netflix"],
+    "carattere":      ["carattere", "personalità"],
+    "valori":         ["valori", "credi"],
+    "obiettivo":      ["obiettivo", "sogno"],
 }
 
-FALLBACK_RESPONSES = [
+LABELS = {
+    "nome":           "Mi chiamo",
+    "eta":            "Ho",
+    "citta":          "Abito a",
+    "lavoro":         "Lavoro come",
+    "linguaggi":      "I linguaggi che uso sono",
+    "hobby":          "Nel tempo libero mi piace",
+    "sport":          "Faccio",
+    "musica":         "Ascolto",
+    "cibo_preferito": "Il mio cibo preferito è",
+    "film_preferito": "Il mio film preferito è",
+    "serie_preferita":"La mia serie preferita è",
+    "carattere":      "Sono",
+    "valori":         "Per me sono importanti",
+    "obiettivo":      "Il mio obiettivo è",
+}
+
+FALLBACK = [
     "Interessante! Puoi dirmi qualcosa in più?",
     "Non ho capito bene, prova a riformulare.",
-    "Bella domanda! Sto ancora imparando a rispondere a tutto.",
-    "Su questo non ho informazioni, ma puoi aggiornarmi!",
+    "Bella domanda! Sto ancora imparando.",
 ]
 
-def get_personalized_response(message: str) -> str:
+def get_response(message):
     msg_lower = message.lower()
-
-    for profile_key, keywords in KEYWORD_MAP.items():
+    for key, keywords in KEYWORD_MAP.items():
         if any(kw in msg_lower for kw in keywords):
-            value = get_profile_info(profile_key)
+            value = get_profile_info(key)
             if value:
-                labels = {
-                    "nome":           "Mi chiamo",
-                    "eta":            "Ho",
-                    "citta":          "Abito a",
-                    "lavoro":         "Lavoro come",
-                    "linguaggi":      "I linguaggi che uso sono",
-                    "hobby":          "Nel tempo libero mi piace",
-                    "sport":          "Faccio",
-                    "musica":         "Ascolto",
-                    "cibo_preferito": "Il mio cibo preferito è",
-                    "film_preferito": "Il mio film preferito è",
-                    "serie_preferita":"La mia serie preferita è",
-                    "carattere":      "Sono",
-                    "valori":         "Per me sono importanti",
-                    "obiettivo":      "Il mio obiettivo è",
-                }
-                label = labels.get(profile_key, profile_key.replace("_", " ").capitalize())
-                return f"{label} {value}."
+                return f"{LABELS.get(key, key)} {value}."
+    return random.choice(FALLBACK)
 
-    return random.choice(FALLBACK_RESPONSES)
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()})
 
-# ─────────────────────────────────────────
-# ENDPOINTS
-# ─────────────────────────────────────────
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    err = check_api_key()
+    if err: return err
+    data = request.get_json()
+    text = data.get("text", "")
+    user = data.get("user", "Anonimo")
+    response = get_response(text)
+    save_conversation(user, text, response)
+    return jsonify({"response": response, "timestamp": datetime.now().isoformat()})
 
-@app.post("/api/chat", response_model=ChatResponse)
-async def chat(message: Message, _: str = Security(verify_api_key)):
-    response = get_personalized_response(message.text)
-    save_conversation(message.user, message.text, response)
-    return ChatResponse(
-        response=response,
-        timestamp=datetime.now().isoformat()
-    )
+@app.route("/api/profile", methods=["GET"])
+def profile():
+    err = check_api_key()
+    if err: return err
+    return jsonify({"profile": get_full_profile()})
 
-@app.get("/api/profile")
-async def profile(_: str = Security(verify_api_key)):
-    return {"profile": get_full_profile()}
+@app.route("/api/history/<user>", methods=["GET"])
+def history(user):
+    err = check_api_key()
+    if err: return err
+    return jsonify({"history": get_history(user)})
+```
 
-@app.get("/api/history/{user}")
-async def history(user: str, _: str = Security(verify_api_key)):
-    return {"history": get_history(user)}
-
-@app.get("/api/health")
-async def health():
-    return {"status": "ok", "timestamp": datetime.now().isoformat()}
-
-from mangum import Mangum
-handler = Mangum(app)
-    
+**Aggiorna `api/requirements.txt`**:
+```
+flask==3.0.3
+flask-cors==4.0.1
+supabase==2.4.0
+python-dotenv==1.0.1
