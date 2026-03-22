@@ -60,7 +60,7 @@ def ask_groq(message, history=[]):
     messages.append({"role": "user", "content": message})
 
     payload = json.dumps({
-        "model": "llama3-8b-8192",
+        "model": "llama-3.3-70b-versatile",
         "messages": messages,
         "max_tokens": 200,
         "temperature": 0.7
