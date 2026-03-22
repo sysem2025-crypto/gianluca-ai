@@ -102,11 +102,3 @@ def history(user):
     err = check_api_key()
     if err: return err
     return jsonify({"history": get_history(user)})
-```
-
-**Aggiorna `api/requirements.txt`**:
-```
-flask==3.0.3
-flask-cors==4.0.1
-supabase==2.4.0
-python-dotenv==1.0.1
