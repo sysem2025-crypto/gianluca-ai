@@ -84,8 +84,10 @@ def ask_groq(message: str, history: list = []) -> str:
             data = json.loads(res.read())
             return data["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"Errore Groq: {e}")
-        return "Non riesco a rispondere al momento, riprova!"
+        print(f"Errore Groq dettaglio: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Errore: {type(e).__name__}: {str(e)}"
 
 def check_api_key():
     key = request.headers.get("X-API-Key")
