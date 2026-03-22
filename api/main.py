@@ -6,12 +6,21 @@ from datetime import datetime
 import os
 import random
 from dotenv import load_dotenv
-from database import (
-    get_profile_info,
-    get_full_profile,
-    save_conversation,
-    get_history
-)
+
+try:
+    from database import (
+        get_profile_info,
+        get_full_profile,
+        save_conversation,
+        get_history
+    )
+except ImportError:
+    from api.database import (
+        get_profile_info,
+        get_full_profile,
+        save_conversation,
+        get_history
+    )
 
 load_dotenv()
 
@@ -127,3 +136,7 @@ async def history(user: str, _: str = Security(verify_api_key)):
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
+# Entry point per Vercel
+handler = app
+    
