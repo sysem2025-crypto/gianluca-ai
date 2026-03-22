@@ -1,7 +1,4 @@
 flask==3.0.3
 flask-cors==4.0.1
-supabase==2.4.0
+supabase==2.9.1
 python-dotenv==1.0.1
-uvicorn==0.29.0
-pydantic==2.7.0
-mangum==0.17.0
