@@ -1,0 +1,23 @@
+# Ambiente virtuale
+venv/
+
+# Variabili d'ambiente (dati sensibili!)
+.env
+
+# Database locale (dati personali)
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
