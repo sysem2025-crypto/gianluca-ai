@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gianluca AI - Il Mio Clone Digitale</title>
+    <script>
+        if (window.location.hostname === 'sysem2025-crypto.github.io') {
+            const targetBase = 'https://gianluca-ai-ten.vercel.app';
+            const targetUrl = new URL(targetBase);
+            window.location.replace(`${targetUrl.origin}${window.location.search}${window.location.hash}`);
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
