@@ -375,37 +375,31 @@ def auth_signup():
         if err:
             return err
 
-        response = requests.post(
-            f"{SUPABASE_URL}/auth/v1/signup",
-            headers=supabase_headers(),
+        # Crea utente via admin API (bypassa email confirmation)
+        admin_headers = supabase_headers()
+        admin_headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
+        admin_resp = requests.post(
+            f"{SUPABASE_URL}/auth/v1/admin/users",
+            headers=admin_headers,
             json={
                 "email": email,
                 "password": password,
-                "data": {"name": name or email.split("@")[0]}
+                "email_confirm": True,
+                "user_metadata": {"name": name or email.split("@")[0]}
             },
             timeout=12
         )
-        payload = response.json()
+        admin_payload = admin_resp.json()
 
-        if response.status_code >= 400:
-            return jsonify({"detail": payload.get("msg") or payload.get("error_description") or "Registrazione non riuscita"}), response.status_code
-
-        # Auto-conferma utente via admin API (bypassa email confirmation)
-        user_id = (payload.get("user") or {}).get("id")
-        if user_id:
-            try:
-                requests.put(
-                    f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}/confirm",
-                    headers={
-                        **supabase_headers(),
-                        "Authorization": f"Bearer {SUPABASE_KEY}"
-                    },
-                    timeout=10
-                )
-            except Exception:
+        if admin_resp.status_code >= 400:
+            detail = admin_payload.get("msg") or ""
+            # Se utente già esiste, prova login
+            if "already exists" in detail.lower() or "user already" in detail.lower():
                 pass
+            else:
+                return jsonify({"detail": detail or "Registrazione non riuscita"}), admin_resp.status_code
 
-        # Prova login immediato
+        # Login immediato
         login_resp = requests.post(
             f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
             headers=supabase_headers(),
