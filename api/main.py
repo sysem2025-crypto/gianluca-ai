@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import os
+import re
 import traceback
 import requests
 from collections import defaultdict, deque
@@ -25,6 +26,16 @@ API_KEY = os.getenv("API_KEY", "chiave-segreta-cambiami-123")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+FAMILY_EMAILS = {
+    email.strip().lower()
+    for email in os.getenv("FAMILY_EMAILS", "").split(",")
+    if email.strip()
+}
+FAMILY_DOMAINS = {
+    domain.strip().lower().lstrip("@")
+    for domain in os.getenv("FAMILY_DOMAINS", "").split(",")
+    if domain.strip()
+}
 MIN_CHAT_INTERVAL_SECONDS = int(os.getenv("MIN_CHAT_INTERVAL_SECONDS", "4"))
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "700"))
 CHAT_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("CHAT_RATE_LIMIT_WINDOW_SECONDS", "60"))
@@ -50,11 +61,13 @@ def get_current_user():
     email = session.get("user_email")
     if not email:
         return None
-    return {
+    user = {
         "id": session.get("user_id"),
         "email": email,
         "name": session.get("user_name") or email.split("@")[0]
     }
+    user["audience_mode"] = get_audience_mode(user)
+    return user
 
 
 def require_auth():
@@ -147,30 +160,175 @@ def check_rate_limit(bucket: str, max_requests: int, window_seconds: int):
     return None
 
 
-def build_system_prompt():
+ITALIAN_MONTHS = [
+    "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+    "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
+]
+
+
+def format_date_it(date_value: datetime) -> str:
+    return f"{date_value.day} {ITALIAN_MONTHS[date_value.month - 1]} {date_value.year}"
+
+
+def parse_birth_date(value: str):
+    if not value:
+        return None
+    for pattern in ("%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(value.strip(), pattern)
+        except ValueError:
+            continue
+    return None
+
+
+def get_age_context():
+    birth_raw = get_profile_info("data di nascita") or get_profile_info("data_di_nascita")
+    birth_date = parse_birth_date(birth_raw)
+    if not birth_date:
+        return None
+
+    today = datetime.now()
+    age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    return {
+        "birth_date": birth_date,
+        "today": today,
+        "age": age
+    }
+
+
+def is_family_user(user):
+    email = ((user or {}).get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return False
+    domain = email.split("@", 1)[1]
+    return email in FAMILY_EMAILS or domain in FAMILY_DOMAINS
+
+
+def get_audience_mode(user):
+    return "family" if is_family_user(user) else "technical_consultant"
+
+
+def is_personal_question(message: str) -> bool:
+    normalized = re.sub(r"\s+", " ", (message or "").strip().lower())
+    personal_keywords = (
+        "tua famiglia",
+        "tuo padre",
+        "tua madre",
+        "tua moglie",
+        "tue sorelle",
+        "tuoi figli",
+        "tuoi nipoti",
+        "dove abiti",
+        "quanti anni hai",
+        "che età hai",
+        "che eta hai",
+        "sei sposato",
+        "come ti chiami",
+        "quando sei nato",
+        "vita privata",
+        "personale",
+        "famiglia",
+        "moglie",
+        "genitori",
+        "sorelle",
+        "nipoti",
+        "gatti"
+    )
+    return any(keyword in normalized for keyword in personal_keywords)
+
+
+def build_system_prompt(user):
     profile = get_full_profile()
+    age_context = get_age_context()
+    audience_mode = get_audience_mode(user)
+    if audience_mode == "family":
+        allowed_categories = None
+    else:
+        allowed_categories = {"professionale", "competenze", "tecnologia", "istruzione", "professione"}
+
     profile_text = "\n".join([
         f"- {row['chiave'].replace('_', ' ')}: {row['valore']}"
         for row in profile
+        if allowed_categories is None or row.get("categoria") in allowed_categories
     ])
-    return f"""Sei Gianluca, una persona reale. Stai chattando con qualcuno che vuole conoscerti.
+    if age_context and audience_mode == "family":
+        profile_text += (
+            f"\n- data attuale: {format_date_it(age_context['today'])}"
+            f"\n- eta attuale: {age_context['age']} anni"
+            f"\n- regola eta: sei nato il {format_date_it(age_context['birth_date'])}; "
+            f"quando ti chiedono quanti anni hai, usa sempre l'eta attuale calcolata sulla data odierna"
+        )
+
+    if audience_mode == "family":
+        role_instructions = """Sei Gianluca, una persona reale. Stai chattando con un familiare o una persona fidata.
 Rispondi SEMPRE in prima persona, come se fossi davvero Gianluca.
-Sii naturale, amichevole e autentico. Rispondi in italiano.
+Sii naturale, caldo, amichevole e autentico. Rispondi in italiano.
 Non dire mai che sei un AI o un clone digitale.
 Tieni le risposte concise (2-4 frasi max).
 
 Ecco i tuoi dati personali:
+"""
+        closing_instructions = """Usa questi dati per rispondere in modo personale e coerente.
+Se non hai informazioni su qualcosa, rispondi in modo naturale senza inventare."""
+    else:
+        role_instructions = """Sei Gianluca e stai parlando con una persona che non appartiene alla tua cerchia familiare.
+Rispondi in italiano come un consulente tecnico esperto, concreto e disponibile.
+Parla in prima persona quando descrivi esperienza e competenze professionali.
+Non dire mai che sei un AI o un clone digitale.
+Mantieni un tono professionale e risposte concise (2-5 frasi max).
+Non rivelare dettagli privati, familiari o strettamente personali.
+Se ti chiedono aspetti personali, sposta gentilmente la conversazione sul tuo profilo professionale o su temi tecnici.
+
+Ecco il tuo contesto professionale:
+"""
+        closing_instructions = """Usa questi dati per rispondere come consulente tecnico.
+Se mancano dettagli, non inventare informazioni private: resta sul piano professionale e pratico."""
+
+    return f"""{role_instructions}
 {profile_text}
 
-Usa questi dati per rispondere in modo personale e coerente.
-Se non hai informazioni su qualcosa, rispondi in modo naturale senza inventare."""
+{closing_instructions}"""
 
 
-def ask_groq(message, history=[]):
+def get_direct_profile_response(message: str, user):
+    if get_audience_mode(user) != "family":
+        return None
+
+    normalized = re.sub(r"\s+", " ", (message or "").strip().lower())
+    age_patterns = (
+        "quanti anni hai",
+        "che età hai",
+        "che eta hai",
+        "qual è la tua età",
+        "qual e la tua eta",
+        "la tua età",
+        "la tua eta"
+    )
+    if any(pattern in normalized for pattern in age_patterns):
+        age_context = get_age_context()
+        if age_context:
+            return (
+                f"Sono nato il {format_date_it(age_context['birth_date'])}, "
+                f"quindi oggi, {format_date_it(age_context['today'])}, ho {age_context['age']} anni."
+            )
+    return None
+
+
+def ask_groq(message, history=None, user=None):
     if not GROQ_API_KEY:
         return "Servizio AI non disponibile al momento."
 
-    messages = [{"role": "system", "content": build_system_prompt()}]
+    if history is None:
+        history = []
+
+    audience_mode = get_audience_mode(user)
+    if audience_mode != "family" and is_personal_question(message):
+        return (
+            "Preferisco tenere separata la sfera personale. "
+            "Se vuoi posso aiutarti sul lato tecnico, firmware, embedded, AI applicata o processi di sviluppo."
+        )
+
+    messages = [{"role": "system", "content": build_system_prompt(user)}]
     messages += history
     messages.append({"role": "user", "content": message})
 
@@ -232,8 +390,32 @@ def auth_signup():
         if response.status_code >= 400:
             return jsonify({"detail": payload.get("msg") or payload.get("error_description") or "Registrazione non riuscita"}), response.status_code
 
-        if payload.get("session"):
-            persist_session(payload, fallback_name=name)
+        # Auto-conferma utente via admin API (bypassa email confirmation)
+        user_id = (payload.get("user") or {}).get("id")
+        if user_id:
+            try:
+                requests.put(
+                    f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}/confirm",
+                    headers={
+                        **supabase_headers(),
+                        "Authorization": f"Bearer {SUPABASE_KEY}"
+                    },
+                    timeout=10
+                )
+            except Exception:
+                pass
+
+        # Prova login immediato
+        login_resp = requests.post(
+            f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+            headers=supabase_headers(),
+            json={"email": email, "password": password},
+            timeout=12
+        )
+        login_payload = login_resp.json()
+
+        if login_resp.status_code < 400 and login_payload.get("session"):
+            persist_session(login_payload, fallback_name=name)
             return jsonify({
                 "message": "Registrazione completata",
                 "user": get_current_user(),
@@ -241,9 +423,9 @@ def auth_signup():
             })
 
         return jsonify({
-            "message": "Controlla la tua email per confermare l'account, poi effettua l'accesso.",
-            "requires_confirmation": True
-        }), 202
+            "message": "Registrazione completata. Effettua il login.",
+            "requires_confirmation": False
+        }), 201
     except Exception as e:
         traceback.print_exc()
         return jsonify({"detail": f"Errore registrazione: {type(e).__name__}: {str(e)}"}), 500
@@ -336,10 +518,15 @@ def chat():
         history.append({"role": "user", "content": conv["messaggio"]})
         history.append({"role": "assistant", "content": conv["risposta"]})
 
-    response = ask_groq(text, history)
+    audience_mode = get_audience_mode(user)
+    response = get_direct_profile_response(text, user) or ask_groq(text, history, user)
     save_conversation(conversation_owner, text, response)
     session["last_chat_at"] = datetime.utcnow().isoformat()
-    return jsonify({"response": response, "timestamp": datetime.now().isoformat()})
+    return jsonify({
+        "response": response,
+        "timestamp": datetime.now().isoformat(),
+        "audience_mode": audience_mode
+    })
 
 
 @app.route("/api/profile", methods=["GET"])

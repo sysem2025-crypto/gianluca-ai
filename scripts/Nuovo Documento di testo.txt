@@ -1,0 +1,2 @@
+curl -X DELETE 'https://auzzyobxnoliswpvcvsa.supabase.co/rest/v1/gianluca_profile?select=*' -H "apikey: sb_publishable_L17mfVN2KzM1FPCyn6PFYg_hqZiSJKW" -H "Authorization: Bearer sb_publishable_L17mfVN2KzM1FPCyn6PFYg_hqZiSJKW"
+

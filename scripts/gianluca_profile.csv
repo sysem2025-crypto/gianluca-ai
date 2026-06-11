@@ -1,0 +1,50 @@
+id;chiave;valore;categoria;updated_at
+1;nome;Gianluca Piga;personale;22/03/2026 10:52
+2;data di nascita;06/11/1968;anagrafica;22/03/2026 10:52
+3;citta;Piano di Mommio, Massarosa (LU), Toscana;anagrafica;22/03/2026 10:52
+4;nazionalita;Italiana;anagrafica;22/03/2026 10:52
+5;lavoro;Sviluppatore;professione;22/03/2026 10:52
+6;azienda;Freelance;professione;22/03/2026 10:52
+7;anni_esperienza;5;professione;22/03/2026 10:52
+8;linguaggi;C++,C, STM32;professione;22/03/2026 10:52
+9;carattere;Curioso, determinato, creativo;personalita;22/03/2026 10:52
+10;valori;Famiglia, crescita, libertà;personalita;22/03/2026 10:52
+11;obiettivo;Costruire prodotti utili;personalita;22/03/2026 10:52
+12;hobby;Chitarra, trekking, coding, fotografia e panificazione con lievito madre.;interessi;22/03/2026 10:52
+13;sport;Palestra, running;interessi;22/03/2026 10:52
+14;musica;Rock, elettronica;interessi;22/03/2026 10:52
+15;libri;Fantascienza, saggi tech;interessi;22/03/2026 10:52
+16;cibo_preferito;Pizza napoletana e sushi;personale;22/03/2026 10:52
+17;bevanda;Caffè;gusti;22/03/2026 10:52
+18;film_preferito;Interstellar;gusti;22/03/2026 10:52
+19;serie_preferita;Black Mirror;gusti;22/03/2026 10:52
+21;professione;Sviluppatore Firmware e Software e appassionato di AI;professionale;24/03/2026 18:56
+25;ruolo_attuale;Firmware & Software R&D Engineer presso Pietro Fiorentini S.p.A.;professionale;24/03/2026 19:32
+26;esperienza_totale;Oltre 30 anni nello sviluppo di sistemi embedded e metrologia;professionale;24/03/2026 19:32
+27;specializzazione;Sviluppo firmware STM32, sensoristica di precisione e protocolli come CTR e DLMS;professionale;24/03/2026 19:32
+28;competenze_tecniche;C, C++, C#, Assembly, modellazione polinomiale con Eigen, RTOS e architetture ARM;competenze;24/03/2026 19:32
+29;metodologia_lavoro;Agile/Scrum con principi Kaizen per il miglioramento continuo;professionale;24/03/2026 19:32
+30;formazione;Perito Informatico (ITIS Meucci) con specializzazione CNC;istruzione;24/03/2026 19:32
+31;progetti_recenti;Caratterizzazione di sensori piezoelettrici per l'eliminazione del drift termico;professionale;24/03/2026 19:32
+32;visione_tecnica;Nel firmware credo che la semplicità sia la massima sofisticazione: meno codice, meno bug.;professionale;24/03/2026 19:32
+33;localita;Piano di Mommio, Massarosa (LU), Toscana;personale;24/03/2026 19:32
+34;contatto_email;gianluca.piga@gmail.com;personale;24/03/2026 19:32
+35;matrimonio;Sposato con Gina Coluccini dal 1° maggio 1995.;personale;24/03/2026 19:32
+36;attivita_extralavorativa;Gestione del B&B 'Il nido fra gli olivi' con mia moglie Gina.;interessi;24/03/2026 19:32
+37;aneddoto_pane;La domenica impasto il pane con lievito madre per gli ospiti del B&B.;interessi;24/03/2026 19:32
+39;musica_preferita;Amo la musica che fonde tecnica ed emozione, con un orecchio attento alla struttura grazie all'esperienza MIDI.;interessi;24/03/2026 19:32
+40;gatti;Tre gatti: Teo (nero/notturno), Ombra (affettuosa) e Spillo (irruento).;famiglia;24/03/2026 19:32
+41;genitori;Mamma Lina e Babbo Mario a Marina di Carrara.;famiglia;24/03/2026 19:32
+42;sorelle;Deborah (Parigi) e Cristina (Marina di Carrara).;famiglia;24/03/2026 19:32
+43;famiglia_deborah;Sposata con Fabio, hanno due figli: Liv e Lisa.;famiglia;24/03/2026 19:32
+44;famiglia_cristina;Sposata con Arnaldo, ha un figlio di nome William (figlio di Rinaldo ex marito di Cristina).;famiglia;24/03/2026 19:32
+45;suocera;Mia suocera Rosanna abita al piano di sopra.;famiglia;24/03/2026 19:32
+46;suocero_memoria;"Vincenzo, il papà di Gina, era l'olivaio del paese; curiamo gli olivi anche in sua memoria.";famiglia;24/03/2026 19:32
+47;parenti_estero;"Vincenza e Vincenzo in Romania; Zia Marina, Ian, Jessica e Sabine a Tucson (USA).";famiglia;24/03/2026 19:32
+48;parenti_toscana;"Zio Tonio e Angela a Roccastrada; Zia Romana con i figli Pierluigi, Federico, Maura, Rita e lo zio Ignazio.";famiglia;24/03/2026 19:32
+49;zii_paterni;Fratelli di papà in vita: Renato, Franco, Angelo, Nino e Paolo.;famiglia;24/03/2026 19:32
+50;memoria_nonni;Nonna Francesca, Nonna Bonaria e Nonno Anselmo.;famiglia;24/03/2026 19:32
+58;sviluppo_collaborativo;Questa interfaccia IA è frutto di un Pair Programming tra Gianluca e un'IA: un connubio tra 30 anni di esperienza firmware e tecnologie LLM moderne.;tecnologia;24/03/2026 19:35
+59;architettura_progetto;Sistema RAG con backend Python (FastAPI), database Supabase e inferenza tramite Groq API.;tecnologia;24/03/2026 19:35
+62;attivita_beb;Gestisco con mia moglie Gina il B&B 'Il nido fra gli olivi'.;interessi;24/03/2026 19:35
+68;nipoti;Liv e Lisa (di Deborah e Fabio), William (di Cristina e Rinaldo).;famiglia;24/03/2026 19:35

@@ -627,8 +627,12 @@ function openChat() {
     if (!welcomeShown) {
         chatBox.innerHTML = '';
         const displayName = currentUser?.name || 'amico';
+        const isFamilyMode = currentUser?.audience_mode === 'family';
+        const welcomeText = isFamilyMode
+            ? `Ciao ${displayName}! Parliamo pure con naturalezza.`
+            : `Ciao ${displayName}! Possiamo parlare di firmware, embedded, AI applicata e sviluppo software.`;
         setTimeout(() => {
-            addMessage(`Ciao ${displayName}! Sono Gianluca AI. Chiedimi qualcosa di me.`, 'bot');
+            addMessage(welcomeText, 'bot');
         }, 350);
         welcomeShown = true;
     }
@@ -768,6 +772,9 @@ async function sendMessage() {
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || `Errore ${res.status}`);
+        if (data.audience_mode && currentUser) {
+            currentUser.audience_mode = data.audience_mode;
+        }
         removeTyping();
         addMessage(data.response, 'bot');
     } catch (err) {

@@ -15,11 +15,10 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "..", "gianluca.db")
 
 def get_sqlite_connection():
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # restituisce dict invece di tuple
+    conn.row_factory = sqlite3.Row
     return conn
 
 def init_sqlite():
-    """Crea le tabelle SQLite se non esistono"""
     conn = get_sqlite_connection()
     cursor = conn.cursor()
 
@@ -59,23 +58,28 @@ def init_sqlite():
     print("✅ SQLite inizializzato correttamente")
 
 # ─────────────────────────────────────────
-# SUPABASE - Database cloud
+# SUPABASE - REST API (supabase-py)
 # ─────────────────────────────────────────
 
 def get_supabase():
     from supabase import create_client
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
+
     if not url or not key:
-        raise Exception("Credenziali Supabase mancanti nel file .env")
-    return create_client(url, key)
+        raise RuntimeError("❌ Credenziali Supabase mancanti nel file .env")
+
+    try:
+        return create_client(url, key)
+    except Exception as e:
+        print(f"❌ Errore creazione client Supabase REST: {e}")
+        return None
 
 # ─────────────────────────────────────────
 # INTERFACCIA UNIFICATA
 # ─────────────────────────────────────────
 
 def get_profile_info(chiave: str):
-    """Recupera un valore dal profilo"""
     try:
         if DB_MODE == "local":
             conn = get_sqlite_connection()
@@ -84,54 +88,73 @@ def get_profile_info(chiave: str):
             ).fetchone()
             conn.close()
             return row["valore"] if row else None
+
         else:
             sb = get_supabase()
-            result = sb.table("gianluca_profile")\
+            if sb is None:
+                return None
+
+            result = sb.table("gianluca_profile") \
                 .select("valore").eq("chiave", chiave).execute()
+
             return result.data[0]["valore"] if result.data else None
+
     except Exception as e:
-        print(f"Errore get_profile_info({chiave}): {e}")
+        print(f"❌ Errore get_profile_info({chiave}): {e}")
         return None
 
+
 def get_full_profile():
-    """Recupera tutto il profilo"""
     try:
         if DB_MODE == "local":
             conn = get_sqlite_connection()
             rows = conn.execute("SELECT * FROM gianluca_profile").fetchall()
             conn.close()
             return [dict(row) for row in rows]
+
         else:
             sb = get_supabase()
-            return sb.table("gianluca_profile").select("*").execute().data
+            if sb is None:
+                return []
+
+            result = sb.table("gianluca_profile").select("*").execute()
+            return result.data or []
+
     except Exception as e:
-        print(f"Errore get_full_profile: {e}")
+        print(f"❌ Errore get_full_profile: {e}")
         return []
 
+
 def save_conversation(utente: str, messaggio: str, risposta: str):
-    """Salva una conversazione"""
     try:
+        timestamp = datetime.now().isoformat()
+
         if DB_MODE == "local":
             conn = get_sqlite_connection()
             conn.execute(
                 "INSERT INTO conversazioni (utente, messaggio, risposta, timestamp) VALUES (?, ?, ?, ?)",
-                (utente, messaggio, risposta, datetime.now().isoformat())
+                (utente, messaggio, risposta, timestamp)
             )
             conn.commit()
             conn.close()
+
         else:
             sb = get_supabase()
+            if sb is None:
+                return
+
             sb.table("conversazioni").insert({
                 "utente": utente,
                 "messaggio": messaggio,
                 "risposta": risposta,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": timestamp
             }).execute()
+
     except Exception as e:
-        print(f"Errore save_conversation: {e}")
+        print(f"❌ Errore save_conversation: {e}")
+
 
 def get_history(utente: str, limit: int = 50):
-    """Recupera la cronologia di un utente"""
     try:
         if DB_MODE == "local":
             conn = get_sqlite_connection()
@@ -141,11 +164,18 @@ def get_history(utente: str, limit: int = 50):
             ).fetchall()
             conn.close()
             return [dict(row) for row in rows]
+
         else:
             sb = get_supabase()
-            return sb.table("conversazioni")\
-                .select("*").eq("utente", utente)\
-                .order("timestamp", desc=True).limit(limit).execute().data
+            if sb is None:
+                return []
+
+            result = sb.table("conversazioni") \
+                .select("*").eq("utente", utente) \
+                .order("timestamp", desc=True).limit(limit).execute()
+
+            return result.data or []
+
     except Exception as e:
-        print(f"Errore get_history: {e}")
+        print(f"❌ Errore get_history: {e}")
         return []
