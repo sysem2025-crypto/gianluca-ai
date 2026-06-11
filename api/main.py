@@ -392,12 +392,14 @@ def auth_signup():
         admin_payload = admin_resp.json()
 
         if admin_resp.status_code >= 400:
+            if admin_payload.get("error_code") == "email_exists":
+                # Utente già registrato: mostra messaggio per fare login
+                return jsonify({
+                    "message": "Email già registrata. Effettua il login.",
+                    "requires_confirmation": True
+                }), 200
             detail = admin_payload.get("msg") or ""
-            # Se utente già esiste, prova login
-            if "already exists" in detail.lower() or "user already" in detail.lower():
-                pass
-            else:
-                return jsonify({"detail": detail or "Registrazione non riuscita"}), admin_resp.status_code
+            return jsonify({"detail": detail or "Registrazione non riuscita"}), admin_resp.status_code
 
         # Login immediato
         login_resp = requests.post(
