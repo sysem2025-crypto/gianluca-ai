@@ -424,7 +424,7 @@ def auth_signup():
 
         return jsonify({
             "message": "Registrazione completata. Effettua il login.",
-            "requires_confirmation": False
+            "requires_confirmation": True
         }), 201
     except Exception as e:
         traceback.print_exc()
