@@ -393,7 +393,7 @@ def auth_signup():
 
         if admin_resp.status_code >= 400:
             if admin_payload.get("error_code") == "email_exists":
-                # Utente già registrato: confermalo (se vecchia registrazione non confermata) e invita al login
+                # Utente già registrato: aggiorna password e conferma
                 users_resp = requests.get(
                     f"{SUPABASE_URL}/auth/v1/admin/users?email={email}",
                     headers=admin_headers,
@@ -401,19 +401,20 @@ def auth_signup():
                 )
                 users_data = users_resp.json()
                 existing = (users_data.get("users") or [None])[0]
-                if existing and not existing.get("email_confirmed_at"):
+                if existing:
                     uid = existing.get("id")
                     if uid:
                         try:
                             requests.put(
-                                f"{SUPABASE_URL}/auth/v1/admin/users/{uid}/confirm",
+                                f"{SUPABASE_URL}/auth/v1/admin/users/{uid}",
                                 headers=admin_headers,
+                                json={"password": password, "email_confirm": True},
                                 timeout=10
                             )
                         except Exception:
                             pass
                 return jsonify({
-                    "message": "Email già registrata. Effettua il login.",
+                    "message": "Email già registrata. Password aggiornata. Effettua il login.",
                     "requires_confirmation": True
                 }), 200
             detail = admin_payload.get("msg") or ""
