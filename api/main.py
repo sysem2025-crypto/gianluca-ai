@@ -19,7 +19,9 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 # CORS
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5500,null").split(",")
-CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization", "X-API-Key"],
+     expose_headers=["Authorization"])
 
 # API Keys
 API_KEY = os.getenv("API_KEY", "chiave-segreta-cambiami-123")
@@ -60,11 +62,42 @@ def check_api_key():
 def get_current_user():
     email = session.get("user_email")
     if not email:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+        if token:
+            try:
+                resp = requests.get(
+                    f"{SUPABASE_URL}/auth/v1/user",
+                    headers={
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": f"Bearer {token}"
+                    },
+                    timeout=8
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    uid = data.get("id")
+                    email = data.get("email") or ""
+                    meta = data.get("user_metadata") or {}
+                    name = meta.get("name") or email.split("@")[0]
+                    role = meta.get("role") or "base"
+                    user = {
+                        "id": uid,
+                        "email": email,
+                        "name": name,
+                        "role": role
+                    }
+                    user["audience_mode"] = get_audience_mode(user)
+                    return user
+            except Exception:
+                pass
         return None
+
+    role = session.get("user_role") or "base"
     user = {
         "id": session.get("user_id"),
         "email": email,
-        "name": session.get("user_name") or email.split("@")[0]
+        "name": session.get("user_name") or email.split("@")[0],
+        "role": role
     }
     user["audience_mode"] = get_audience_mode(user)
     return user
@@ -108,6 +141,7 @@ def persist_session(auth_payload, fallback_name=""):
     session["user_id"] = user.get("id")
     session["user_email"] = user.get("email")
     session["user_name"] = metadata.get("name") or fallback_name or (user.get("email") or "").split("@")[0]
+    session["user_role"] = metadata.get("role") or "base"
     session["last_chat_at"] = None
 
 
@@ -385,7 +419,7 @@ def auth_signup():
                 "email": email,
                 "password": password,
                 "email_confirm": True,
-                "user_metadata": {"name": name or email.split("@")[0]}
+                "user_metadata": {"name": name or email.split("@")[0], "role": "base"}
             },
             timeout=12
         )
@@ -431,10 +465,12 @@ def auth_signup():
 
         if login_resp.status_code < 400 and login_payload.get("session"):
             persist_session(login_payload, fallback_name=name)
+            access_token = login_payload.get("access_token", "")
             return jsonify({
                 "message": "Registrazione completata",
                 "user": get_current_user(),
-                "requires_confirmation": False
+                "requires_confirmation": False,
+                "access_token": access_token
             })
 
         return jsonify({
@@ -473,7 +509,12 @@ def auth_login():
             return jsonify({"detail": payload.get("error_description") or "Credenziali non valide"}), response.status_code
 
         persist_session(payload, fallback_name=name)
-        return jsonify({"message": "Accesso effettuato", "user": get_current_user()})
+        access_token = payload.get("access_token", "")
+        return jsonify({
+            "message": "Accesso effettuato",
+            "user": get_current_user(),
+            "access_token": access_token
+        })
     except Exception as e:
         traceback.print_exc()
         return jsonify({"detail": f"Errore login: {type(e).__name__}: {str(e)}"}), 500
@@ -483,6 +524,123 @@ def auth_login():
 def auth_logout():
     clear_session()
     return jsonify({"message": "Logout effettuato"})
+
+
+@app.route("/api/auth/users", methods=["GET"])
+def auth_list_users():
+    user, err = require_auth()
+    if err:
+        return err
+    if user.get("role") != "admin":
+        return jsonify({"detail": "Solo amministratori"}), 403
+    try:
+        admin_headers = supabase_headers()
+        admin_headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
+        resp = requests.get(
+            f"{SUPABASE_URL}/auth/v1/admin/users",
+            headers=admin_headers,
+            timeout=12
+        )
+        if resp.status_code >= 400:
+            return jsonify({"detail": "Errore recupero utenti"}), resp.status_code
+        data = resp.json()
+        users_list = []
+        for u in (data.get("users") or []):
+            meta = u.get("user_metadata") or {}
+            users_list.append({
+                "id": u.get("id"),
+                "email": u.get("email"),
+                "role": meta.get("role") or "base",
+                "name": meta.get("name") or "",
+                "created_at": u.get("created_at", "")
+            })
+        return jsonify({"users": users_list})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"detail": f"Errore: {str(e)}"}), 500
+
+
+@app.route("/api/auth/users/<uid>/role", methods=["PUT"])
+def auth_update_role(uid):
+    user, err = require_auth()
+    if err:
+        return err
+    if user.get("role") != "admin":
+        return jsonify({"detail": "Solo amministratori"}), 403
+    data = request.get_json(silent=True) or {}
+    new_role = data.get("role")
+    if new_role not in ("base", "pro", "admin"):
+        return jsonify({"detail": "Ruolo non valido"}), 400
+    try:
+        admin_headers = supabase_headers()
+        admin_headers["Authorization"] = f"Bearer {SUPABASE_KEY}"
+        # Get current user metadata
+        get_resp = requests.get(
+            f"{SUPABASE_URL}/auth/v1/admin/users/{uid}",
+            headers=admin_headers,
+            timeout=8
+        )
+        if get_resp.status_code >= 400:
+            return jsonify({"detail": "Utente non trovato"}), 404
+        existing = get_resp.json()
+        meta = existing.get("user_metadata") or {}
+        meta["role"] = new_role
+        put_resp = requests.put(
+            f"{SUPABASE_URL}/auth/v1/admin/users/{uid}",
+            headers=admin_headers,
+            json={"user_metadata": meta},
+            timeout=10
+        )
+        if put_resp.status_code >= 400:
+            return jsonify({"detail": "Errore aggiornamento ruolo"}), put_resp.status_code
+        return jsonify({"message": "Ruolo aggiornato", "role": new_role})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"detail": f"Errore: {str(e)}"}), 500
+
+
+@app.route("/api/auth/token-login", methods=["POST"])
+def auth_token_login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    if not email or not password:
+        return jsonify({"detail": "Email e password richieste"}), 400
+    try:
+        resp = requests.post(
+            f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+            headers=supabase_headers(),
+            json={"email": email, "password": password},
+            timeout=12
+        )
+        payload = resp.json()
+        if resp.status_code >= 400:
+            return jsonify({"detail": payload.get("error_description") or "Credenziali non valide"}), resp.status_code
+        access_token = payload.get("access_token", "")
+        user_resp = requests.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=8
+        )
+        user_data = user_resp.json() if user_resp.status_code == 200 else {}
+        meta = user_data.get("user_metadata") or {}
+        return jsonify({
+            "message": "Accesso effettuato",
+            "access_token": access_token,
+            "user": {
+                "id": user_data.get("id"),
+                "email": user_data.get("email"),
+                "name": meta.get("name") or email.split("@")[0],
+                "role": meta.get("role") or "base",
+                "audience_mode": "family" if (email.strip().lower() in FAMILY_EMAILS or email.split("@", 1)[1].strip().lower() in FAMILY_DOMAINS) else "technical_consultant"
+            }
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"detail": f"Errore login: {str(e)}"}), 500
 
 
 @app.route("/api/health", methods=["GET"])
