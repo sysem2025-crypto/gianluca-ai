@@ -1,3 +1,5 @@
+import smtplib
+from email.mime.text import MIMEText
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -46,6 +48,35 @@ CHAT_RATE_LIMIT_MAX_REQUESTS = int(os.getenv("CHAT_RATE_LIMIT_MAX_REQUESTS", "12
 AUTH_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("AUTH_RATE_LIMIT_WINDOW_SECONDS", "300"))
 AUTH_RATE_LIMIT_MAX_REQUESTS = int(os.getenv("AUTH_RATE_LIMIT_MAX_REQUESTS", "8"))
 rate_limit_store = defaultdict(deque)
+
+# Email notification
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASS = os.getenv("SMTP_PASS")
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER or "noreply@sysem.it")
+NOTIFY_EMAIL = os.getenv("NOTIFY_EMAIL", "gianluca.piga@sysem.it")
+
+def send_notification(new_email, new_name):
+    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
+        return
+    try:
+        msg = MIMEText(
+            f"Nuova registrazione su SYSEM\n\n"
+            f"Email: {new_email}\n"
+            f"Nome: {new_name or '—'}\n"
+            f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n",
+            "plain", "utf-8"
+        )
+        msg["Subject"] = "Nuova registrazione SYSEM"
+        msg["From"] = SMTP_FROM
+        msg["To"] = NOTIFY_EMAIL
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+    except Exception as e:
+        print(f"Email notification failed: {e}")
 
 try:
     from database import get_profile_info, get_full_profile, save_conversation, get_history
@@ -454,6 +485,8 @@ def auth_signup():
                 }), 200
             detail = admin_payload.get("msg") or ""
             return jsonify({"detail": detail or "Registrazione non riuscita"}), admin_resp.status_code
+
+        send_notification(email, name)
 
         # Login immediato
         login_resp = requests.post(
