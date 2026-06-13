@@ -71,10 +71,15 @@ def send_notification(new_email, new_name):
         msg["Subject"] = "Nuova registrazione SYSEM"
         msg["From"] = SMTP_FROM
         msg["To"] = NOTIFY_EMAIL
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
     except Exception as e:
         print(f"Email notification failed: {e}")
 
