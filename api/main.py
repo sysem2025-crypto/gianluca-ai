@@ -18,7 +18,8 @@ app.config["SESSION_COOKIE_SECURE"] = os.getenv("COOKIE_SECURE", "true").lower()
 app.permanent_session_lifetime = timedelta(days=7)
 
 # CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5500,null").split(",")
+ALLOWED_ORIGINS = (os.getenv("ALLOWED_ORIGINS") or
+    "http://localhost:5500,https://sysem.it,https://www.sysem.it,http://sysem.it,null").split(",")
 CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True,
      allow_headers=["Content-Type", "Authorization", "X-API-Key"],
      expose_headers=["Authorization"])
