@@ -101,32 +101,15 @@ def get_current_user():
     if not email:
         token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
         if token:
-            try:
-                resp = requests.get(
-                    f"{SUPABASE_URL}/auth/v1/user",
-                    headers={
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": f"Bearer {token}"
-                    },
-                    timeout=8
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    uid = data.get("id")
-                    email = data.get("email") or ""
-                    meta = data.get("user_metadata") or {}
-                    name = meta.get("name") or email.split("@")[0]
-                    role = meta.get("role") or "base"
-                    user = {
-                        "id": uid,
-                        "email": email,
-                        "name": name,
-                        "role": role
-                    }
-                    user["audience_mode"] = get_audience_mode(user)
-                    return user
-            except Exception:
-                pass
+            # 1) Token di sessione Supabase
+            user = verify_supabase_token(token)
+            if user:
+                return user
+            # 2) Token SYSEM (base64: email|role|YYYY-MM-DD)
+            user = verify_sysem_token(token)
+            if user:
+                persist_sysem_user(user)
+                return user
         return None
 
     role = session.get("user_role") or "base"
@@ -138,6 +121,76 @@ def get_current_user():
     }
     user["audience_mode"] = get_audience_mode(user)
     return user
+
+
+def verify_supabase_token(token):
+    try:
+        resp = requests.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {token}"
+            },
+            timeout=8
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            uid = data.get("id")
+            email = data.get("email") or ""
+            meta = data.get("user_metadata") or {}
+            name = meta.get("name") or email.split("@")[0]
+            role = meta.get("role") or "base"
+            user = {
+                "id": uid,
+                "email": email,
+                "name": name,
+                "role": role
+            }
+            user["audience_mode"] = get_audience_mode(user)
+            return user
+    except Exception:
+        pass
+    return None
+
+
+def verify_sysem_token(token):
+    import base64
+    try:
+        decoded = base64.b64decode(token, validate=True).decode("utf-8")
+    except Exception:
+        return None
+    parts = decoded.split("|")
+    if len(parts) != 3:
+        return None
+    sysem_email, sysem_role, sysem_date = parts
+    if "@" not in sysem_email or "." not in sysem_email.split("@")[-1]:
+        return None
+    allowed_roles = {"guest", "base", "pro", "admin"}
+    if sysem_role not in allowed_roles:
+        return None
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", sysem_date):
+        return None
+    device_today = datetime.utcnow().strftime("%Y-%m-%d")
+    if sysem_date != device_today:
+        return None
+    name = sysem_email.split("@")[0]
+    user = {
+        "id": None,
+        "email": sysem_email,
+        "name": name,
+        "role": sysem_role
+    }
+    user["audience_mode"] = get_audience_mode(user)
+    return user
+
+
+def persist_sysem_user(user):
+    session.permanent = True
+    session["user_id"] = None
+    session["user_email"] = user.get("email")
+    session["user_name"] = user.get("name")
+    session["user_role"] = user.get("role")
+    session["last_chat_at"] = None
 
 
 def require_auth():
