@@ -11,6 +11,13 @@
       window.location.replace(`${targetUrl.origin}${window.location.search}${window.location.hash}`);
     }
   </script>
+  <script>
+    (function() {
+      if (new URLSearchParams(window.location.search).get('embed') === '1') {
+        document.documentElement.classList.add('embed-mode');
+      }
+    })();
+  </script>
   <style>
     :root {
       --ink: #1f1a16;
@@ -28,6 +35,21 @@
     html, body {
       min-height: 100%;
     }
+
+    .embed-mode .topbar { display: none; }
+    .embed-mode .overlay-menu { display: none; }
+    .embed-mode .home { min-height: 100%; }
+    .embed-mode .home::after { inset: 0; border: none; }
+    .embed-mode .hero { min-height: 100%; padding: 16px 0 16px; }
+    .embed-mode .hero-chat { padding: 4px 0 0; }
+    .embed-mode .hero-chat .hero-overline,
+    .embed-mode .hero-chat h1 { display: none; }
+    .embed-mode .chat-layout { margin-top: 0; }
+    .embed-mode .hero-home .hero-overline,
+    .embed-mode .hero-home h1,
+    .embed-mode .hero-home .hero-subtitle { display: none; }
+    .embed-mode .hero-home { justify-content: flex-start; padding-top: 24px; }
+    .embed-mode .register-card { box-shadow: none; }
 
     body {
       margin: 0;
