@@ -991,8 +991,8 @@
         <div class="chat-header">
           <div class="chat-avatar">G</div>
           <div class="chat-header-info">
-            <h2>Gianluca AI</h2>
-            <p>Il mio clone digitale personale</p>
+            <h2 id="chatHeaderTitle">Gianluca AI</h2>
+            <p id="chatHeaderSubtitle">Il mio clone digitale personale</p>
             <div class="header-user" id="headerUser"></div>
           </div>
           <div class="chat-status">
@@ -1372,6 +1372,15 @@ async function tryTokenLogin() {
 }
 
 window.onload = async () => {
+  const embedMode = document.documentElement.classList.contains('embed-mode');
+  if (embedMode) {
+    document.title = 'Assistente AI SYSEM';
+    const chatTitle = document.getElementById('chatHeaderTitle');
+    const chatSubtitle = document.getElementById('chatHeaderSubtitle');
+    if (chatTitle) chatTitle.textContent = 'Assistente AI';
+    if (chatSubtitle) chatSubtitle.textContent = 'Supporto tecnico SYSEM per utility, normative e diagnostica';
+  }
+
   setAuthMode(false);
   updateUI();
 
