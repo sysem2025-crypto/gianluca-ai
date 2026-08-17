@@ -495,7 +495,7 @@ def ask_groq(message, history=None, user=None):
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama-3.3-70b-versatile",
+                "model": "openai/gpt-oss-120b",
                 "messages": messages,
                 "max_tokens": 200,
                 "temperature": 0.7
