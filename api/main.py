@@ -361,6 +361,19 @@ def is_personal_question(message: str) -> bool:
     return any(keyword in normalized for keyword in personal_keywords)
 
 
+CONOSCENZA_SITO_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "conoscenza_sito.json")
+
+
+def get_conoscenza_sito():
+    try:
+        with open(CONOSCENZA_SITO_PATH, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data.get("conoscenza_sito", [])
+    except Exception as e:
+        print(f"Errore lettura conoscenza_sito.json: {e}")
+        return []
+
+
 def build_system_prompt(user):
     profile = get_full_profile()
     age_context = get_age_context()
@@ -375,6 +388,24 @@ def build_system_prompt(user):
         for row in profile
         if allowed_categories is None or row.get("categoria") in allowed_categories
     ])
+
+    if audience_mode != "family":
+        conoscenza = get_conoscenza_sito()
+        if conoscenza:
+            area_label = {
+                "software_applicativi": "Software applicativi (manuali operatore)",
+                "protocolli": "Protocolli di comunicazione e misura",
+                "caratterizzazione": "Caratterizzazione sensori e misure"
+            }
+            sezioni = []
+            for area in ("software_applicativi", "protocolli", "caratterizzazione"):
+                voci = [r for r in conoscenza if r.get("area") == area]
+                if voci:
+                    label = area_label.get(area, area)
+                    righe = "\n".join(f"- {r['chiave'].replace('_', ' ')}: {r['valore']}" for r in voci)
+                    sezioni.append(f"## {label}\n{righe}")
+            if sezioni:
+                profile_text += "\n\n### Conoscenza tecnica SYSEM\n" + "\n\n".join(sezioni)
     if age_context and audience_mode == "family":
         profile_text += (
             f"\n- data attuale: {format_date_it(age_context['today'])}"

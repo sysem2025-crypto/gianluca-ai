@@ -1,0 +1,164 @@
+{
+  "conoscenza_sito": [
+    {
+      "area": "software_applicativi",
+      "chiave": "genius_monitor",
+      "valore": "GeniusMonitor è un'applicazione desktop Windows (MFC) per la configurazione e manutenzione dei correttori della famiglia Modus/Modus Slim. Consente: lettura/scrittura stato dispositivo, impostazione password e timeout, configurazione formula di conversione, unità di misura e lingua, gestione numeri di serie (macchina, sensore pressione, Pt1000, contatore), configurazione ingressi/uscite con peso e divisore, preset dei totalizzatori Vm/Vb/Ve, lettura istantanei (P, T, Z, C, CH1-CH3), grafico storico, log CSV, configurazione sensore di pressione con coefficienti polinomiali (STS, Gems, Teclab, MultiCal, Polinomio Fiorentini), composizione gas semplificata ed estesa (CO2, PCS, DGAS, H2, N2 e componenti C1..C10, He, Ar), calibrazione pressione/temperatura con matrici e offset, download firmware e upload file di lingua (.lang). Distribuito come installer .exe per Windows 10/11."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "genius_monitor_sicurezza",
+      "valore": "GeniusMonitor: le funzioni di scrittura, calibrazione e firmware modificano il dispositivo. Procedura corretta: Read -> modifica -> Write/Send -> Read di verifica; modificare un solo gruppo di parametri alla volta; salvare sempre i valori originali e i backup .ini/.csv; non interrompere mai il download firmware; dopo interventi riportare il dispositivo in stato Normal."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "genius_monitor_firmware",
+      "valore": "GeniusMonitor download firmware: selezionare file .bin autorizzato, verificare nome file, lunghezza, CIA, build, CRC e indicazione crypto, poi Download. Non scollegare cavo né spegnere durante il trasferimento. NACK/ERR indicano aggiornamento non riuscito: verificare file, collegamento, compatibilità, alimentazione prima di riprovare. Versioni: 1.9.x (es. 1.9.2.34, 10/08/2026)."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "rtu_terminal",
+      "valore": "RTU Terminal è un'applicazione desktop Windows per la configurazione, lettura e manutenzione delle RTU (Remote Terminal Unit) per telelettura/telecontrollo, in particolare famiglia Remi con protocollo Enel-870. Offre pagine per connessione, configurazione, calibrazione, telemisure e telesegnali, con coda eventi e thread di comunicazione. Funzioni: lettura campo GSM, orologio interno, canali analogici/digitali, configurazione, preset contatori (con peso e TCal), download firmware, reset allarmi, sincronizzazione orologio, canali uTL, auto calibrazione, set guadagno, matrici default/calibrazione, forza chiamata, invio polinomio, lettura matrice calibrazione, stato GSM (modelli PQ), contatori PQ, eventi e allarmi. Varianti: GUI, modalità comando (CmdMode) e DLL di integrazione."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "rtu_terminal_dll",
+      "valore": "RTU Terminal DLL (RTU_Protocol_DLL, protocollo Teclab-870): API rtu_protocol_init(com,baud,device_type,log), rtu_protocol_read_calibration(points,max,count,log), rtu_protocol_write_calibration_file(path,points,count,log), rtu_protocol_close(log). Return 0=ok, 1=ok con warning, <0 errore (-20 apertura COM, -21 timeout, -22 protocollo/CRC, -23 periferica non compatibile, -30 scrittura file). Chiamare sempre close; una sola sessione COM per volta."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "interface_dlms",
+      "valore": "InterfaceDLMS è uno strumento Windows per la comunicazione DLMS con i dispositivi ModusMini, usato in particolare per scrivere l'APN della SIM tramite porta seriale usando il client Gurux. Due modalità: GUI (consigliata, con log e validazione input) e CLI (script Python per automazione). Comando Gurux usato: GuruxDLMSClientExample.exe -S COMx:9600:8None1 -c 16 -s 1 -x <OBIS:ATTR:APN_HEX:DATA_TYPE:OBJECT_TYPE> -t Verbose. APN default iot.1nce.net, OBIS 0.1.25.4.0.255 attributo 2. Richiede GuruxDLMSClientExample.exe (nella cartella app o percorso configurato)."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "interface_dlms_uso",
+      "valore": "InterfaceDLMS procedura: 1) collegare il dispositivo e identificare la porta COM; 2) selezionare la porta e Refresh; 3) tab SIM/APN inserire l'APN (default iot.1nce.net); 4) Send; 5) verificare esito nel Log. Regole: APN non vuoto, solo caratteri ASCII, un comando alla volta. La GUI supporta anche altri comandi DLMS configurati nel profilo profiles\\modusmini_nb_iot.json."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "modus_gurux_client",
+      "valore": "Modus Gurux Client (GuruxDLMSClient.exe) è un'applicazione da riga di comando Windows per comunicare con dispositivi DLMS/COSEM via TCP/IP o porta seriale. Parametri: -h host/IP, -p porta TCP, -S porta seriale (es. COM3:9600:8None1), -i interfaccia (HDLC/WRAPPER/HdlcModeE/Plc), -c client address (def 16), -s server address (def 1), -r LN o SN, -t trace (Off/Error/Warning/Info/Verbose). Lettura attributi con -g \"OBIS:indice[,OBIS:indice]\"; scrittura con -x \"OBIS:indice:valore:tipoDato:tipoOggetto\"; metodi con -z. Output letture: OBIS|indice|valore."
+    },
+    {
+      "area": "software_applicativi",
+      "chiave": "modus_gurux_sicurezza",
+      "valore": "Modus Gurux Client autenticazione: -a None/Low/High/HighMd5/HighSha1/HighGmac/HighSha256/HighEcdsa, -P password, -C cifratura (None/Authentication/Encryption/AuthenticationEncryption), -V security suite (Suite0/1/2), -v invocation counter OBIS (es. 0.0.43.1.1.255), -T system title hex, -A auth key hex, -B block cipher key hex, -D dedicated key hex. Chiavi come stringhe esadecimali senza separatori. Scritture e metodi solo da personale autorizzato."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "ctr_panoramica",
+      "valore": "CTR (Communication protocol for gas metering) è il protocollo applicativo di UNI/TS 11291-3:2021 per la comunicazione con sistemi di misura gas su base oraria. Usato per telelettura e telecontrollo di misuratori gas residenziali, industriali, stazioni di misura, data logger e convertitori di volume. Mezzi supportati: GSM-SMS, GPRS (TCP/UDP), PSTN, linea dedicata, radio, bus seriali. Esclude le classi A2/A1."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "ctr_trame",
+      "valore": "Struttura trama CTR: [WAKE (20B opz.)] | STX | ADD (2 byte indirizzo, FFFFh broadcast, 0000h non valido) | PROFI (1 byte: LdT + profilo 0-4 + operator_id) | FUNCT (1 byte: codice funzione e flag cifratura) | STRUCT (1 byte: REGISTER/TABLE/ARRAY/TRACE) | CHAN (1 byte: 0 generico, 1-14 misura, 0Fh broadcast) | DATI (variabile, max 128 byte trame corte) | CPA (4 byte MAC AES-128-CMAC) | CRC (2 byte) | ETX. Frammentazione non supportata: ogni datagramma è autonomo."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "ctr_sicurezza",
+      "valore": "Sicurezza CTR: autenticazione obbligatoria CPA con AES-128-CMAC calcolato su ADD+PROFI+FUNCT+STRUCT+CHAN+DATI; cifratura opzionale AES-128 in modalità CTR su STRUCT, CHAN e DATI (IV = CPA ripetuto 4 volte). Gerarchia chiavi KEYC_x, KEYT, KEYF modificabili con funzioni amministrative. Protezione anti-replay tramite controlli temporali e identificativi operativi."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "ctr_funzioni",
+      "valore": "Funzioni CTR: QUERY (lettura attributi), WRITE (modifica parametri), EXECUTE (azioni sul server: reset, sync oraria, sigilli, download), VOLUNTARY (trasmissione spontanea server-client), END OF SESSION, SECRET (modifica chiavi), DOWNLOAD (aggiornamento firmware con trame lunghe), IDENTIFICATION (challenge-response PUK_S)."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "ctr_oggetti",
+      "valore": "Modello dati CTR orientato agli oggetti: ogni oggetto ha .id (2 byte) e attributi standard .qlf, .val, .acces, .def. Strutture dati: REGISTER (50h), TABLE/ARRAY (01h-51h), TRACE/TRACE_C (52h-53h, storici a passo costante). Oggetti tipici: portata/volume (Qm, Qb, Vm, Vb, totalizzatori), pressione/temperatura (P, T, Pb, Tb), eventi e allarmi con timestamp."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "ctr_profili",
+      "valore": "RBAC CTR: 5 profili (0 amministratore di servizio, 1-4 profili operativi). Permessi definiti dall'attributo .acces su ciascun oggetto, con lettura e scrittura separate per profilo. Funzioni amministrative: modifica password (F_PSW), modifica chiavi (F_MKC/F_MKT/SECRET), gestione sigilli (F_DSIG/F_ASIG)."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "dlms_riferimenti",
+      "valore": "Riferimenti DLMS: UNI/TS 11291-14-2 (modello dati), DLMS/COSEM Green Book, serie IEC 62056. Applicazione per gruppi di misura gas su base oraria, interoperabilità e intercambiabilità dei gruppi di misura."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "dlms_modello_dati",
+      "valore": "Modello dati DLMS/COSEM: oggetti come register, profile generic, clock, association LN. Attributi e metodi per accesso ai dati di misura. Struttura gerarchica logical device → objects → attributes. Interface class standardizzate secondo Green Book."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "dlms_comunicazione",
+      "valore": "Comunicazione DLMS: formati APDU secondo Green Book, trasporti HDLC, TCP/UDP, wireless M-Bus, GSM/GPRS, NB-IoT, radio 169 MHz. Parametri di rete: timeout Tg, Tnb, Tresp. Sicurezza a livello applicativo con cifratura e autenticazione AES-128 (GCM/GMAC)."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "dlms_oggetti",
+      "valore": "Oggetti necessari DLMS per conformità (Appendice F e UNI/TS 11291-14-2): registro volumi (Vm, Vb, totalizzatori orari/giornalieri), parametri (P, T, Pb, Tb, fattori di comprimibilità), eventi e allarmi con log timestampato. Ambito: contatori gas di grossa taglia (Qmax > 65 m³/h)."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "pot_riferimento",
+      "valore": "POT è definito dalla UNI 11629:2021 e riguarda il processo operativo tecnico: perimetro, responsabilità, struttura dei parametri, controlli di coerenza, regole di esercizio, manutenzione e ripristino per sistemi misura/correttori."
+    },
+    {
+      "area": "protocolli",
+      "chiave": "pot_controlli",
+      "valore": "Controlli POT: checklist di avvio e validazione configurazione, verifiche periodiche sui parametri critici, gestione non conformità e azioni correttive, tracciamento interventi, versioni e storico eventi. Output documentali: registro controlli tecnici, report modifiche e autorizzazioni, evidenze per riesame interno e verifica esterna."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "sensori_pressione",
+      "valore": "Nei sistemi di misura utilities il dato volumetrico corretto dipende da sensori di pressione assoluta, di temperatura e dallo stato metrologico del misuratore associato. Per i sensori di pressione si valuta campo operativo, stabilità nel tempo e deriva termica; per i sensori di temperatura posizione di installazione, tempi di risposta e accuratezza."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "sensore_wotian_gs03",
+      "valore": "Sensore piezoelettrico MEMS Wotian GS03/GSE03 (es. TL02 0-10bar o 0-80bar assoluti): ponte di Wheatstone a 4 fili (V+, Out1, Out2, Gnd), alimentazione 2,5 V linearizzata. Non-linearità ±0.2%FS tipica / ±0.3%FS max, zero output ±30mV, full span 30-70mV (10bar) o 40-120mV (80bar), temp coefficient 0.02%FS/°C (>=1bar) o 0.04%FS/°C (<1bar), insulation >2000MΩ/250Vdc, bridge resistance 2600-5500Ω, response ≤1ms, long term stability ≤0.2%FS/anno. Modelli tradizionali (compensati/non compensati) e polinomiali."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "modello_polinomiale_sts",
+      "valore": "Modello polinomiale STS: le variabili di ingresso sono Vb (tensione ponte in mV) e VTout (caduta su resistenza di shunt da 200 ohm in serie, in mV). Da VTout si ricava la resistenza del ponte: Rb = 200*(2.5-VTout)/VTout. Coefficienti a0..a3, b0..b3, c0..c3, d0..d3 calcolati dal costruttore per polinomio di 3° grado in Rb e Vb: VbOut = A + B*S + C*S2 + D*S3 con S=Vb. Il file del costruttore (es. SNPres: TDA4351_AUWL-18.txt, FS 80) contiene i coefficienti."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "circuito_condizionamento",
+      "valore": "Circuito di lettura misura analogica Modus Slim 2: ADC Analog Devices AD7795BRUZ (6 canali, low noise, low power, 24-bit sigma-delta, In-Amp e reference) + regolatore ad alta precisione ISL60002. Due ingressi analogici: Vb (ponte) e VTout (caduta su 200 ohm). Conversione raw→mV: Vb = raw[canale] * Vref / (word_bit * 2^gain[canale]). Guadagni per Wotian TL02 non compensato: Vb gain 16/32/32/32/16 per FS 2/10/20/40/80, VTout gain 8, filter 3."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "sistema_acquisizione",
+      "valore": "Sistema di caratterizzazione: schede interne di produzione basate su STM32L152VCT (Cortex ARM, 256KB Flash ECC, 32KB RAM, 8KB EEPROM), IDE IAR V8.50 in C. Gestione parallela su RS485 con indirizzi statici (digitali 1-8) o dinamici (flash), broadcast 0xff. Protocollo multidrop derivato dal protocollo proprietario Modus con timeout trama 1 secondo; comando 47 lettura istantanei (TYPE 2 raw / TYPE 3 mV), comando 81 scrittura configurazione hardware (gain, filtro)."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "caratterizzazione_definizione",
+      "valore": "La caratterizzazione definisce il comportamento reale del sensore nel campo di esercizio per ridurre errore sistematico e incertezza operativa. Prevede: verifica a punti multipli su intervallo nominale e zone critiche; determinazione di offset, linearità, isteresi e ripetibilità; tracciabilità delle tarature e storico delle regolazioni."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "caratterizzazione_multitabellare",
+      "valore": "Caratterizzazione multi-tabellare: attraverso la VTout si determina la temperatura corrente e si linearizza la Vb con tabelle multiple di calibrazione differenziate per temperatura. Setpoint temperatura: -25, 0, 30, 60 °C. Setpoint pressione per FS: FS2 (800-2000 mbar), FS10 (800-10000), FS20 (1000-20000), FS40 (4000-40000), FS80 (8000-80000). Procedura di linearizzazione: 1) linearizzazione VTout per temperatura corrente, 2) linearizzazione Vb con tabella precedente, 3) con tabella successiva, 4) interpolazione in pressione tra le due tabelle per annullare il drift termico."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "caratterizzazione_pressione",
+      "valore": "Caratterizzazione metrologica sensore di pressione assoluta: minimo 5 punti di taratura (0%, 25%, 50%, 75%, 100% FS); offset (deviazione a pressione nulla, compensabile via software); linearità (±0.075% FS tipico); isteresi (differenza curva salita/discesa); deriva termica (coefficiente %FS/°C su zero e span); stabilità a lungo termine (drift annuo dichiarato); tabella di linearizzazione (coppie lettura grezza → pressione reale per interpolazione nel correttore); incertezza estesa k=2 (taratura + risoluzione + deriva + interpolazione)."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "gestione_offset",
+      "valore": "Gestione offset: l'errore di misura può risultare costante e positivo; sottraendo la percentuale media degli errori rilevati dai file multi-tabellari si applica un offset calibrato, ricaricando la tabella nell'EVC. Le misure risultano così vicine ai valori dello strumento di riferimento."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "formule_compressione",
+      "valore": "Il correttore converte il volume misurato in volume alle condizioni base: Vb = Vm × (P/Pb) × (Tb/T) × (Zb/Z), dove Vm è volume misurato, P/T/Z grandezze in esercizio, Pb/Tb/Zb grandezze di riferimento. Il fattore di comprimibilità Z si ricava con formule tabellari, correlazioni AGA o metodi dedicati in funzione di composizione gas, pressione assoluta e temperatura."
+    },
+    {
+      "area": "caratterizzazione",
+      "chiave": "sistema_misura",
+      "valore": "Il sistema di misura ruota attorno alla qualità della catena completa: misuratore, correttore, sensori di pressione/temperatura, alimentazione, comunicazione e backend di raccolta. Ogni anello influenza il dato finale e la continuità operativa. La gestione include controllo versioni firmware/configurazioni, storicizzazione interventi, coerenza parametri e allineamento documentale alle prescrizioni metrologiche."
+    }
+  ]
+}
