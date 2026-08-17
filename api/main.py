@@ -497,10 +497,10 @@ def ask_groq(message, history=None, user=None):
             json={
                 "model": "openai/gpt-oss-120b",
                 "messages": messages,
-                "max_tokens": 200,
+                "max_tokens": 700,
                 "temperature": 0.7
             },
-            timeout=10
+            timeout=30
         )
         res.raise_for_status()
         return res.json()["choices"][0]["message"]["content"].strip()
