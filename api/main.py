@@ -783,7 +783,14 @@ def auth_token_login():
 
 @app.route("/api/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat(), "conoscenza_sito": len(get_conoscenza_sito())})
+    return jsonify({
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "conoscenza_sito": len(get_conoscenza_sito()),
+        "paths": [{"path": p, "exists": os.path.isfile(p)} for p in CONOSCENZA_SITO_CANDIDATES],
+        "cwd": os.getcwd(),
+        "file": os.path.dirname(__file__)
+    })
 
 
 @app.route("/api/debug", methods=["GET"])
