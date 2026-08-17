@@ -369,9 +369,11 @@ CONOSCENZA_SITO_CANDIDATES = [
     os.path.join(os.getcwd(), "api", "..", "data", "conoscenza_sito.json"),
 ]
 CONOSCENZA_SITO_CACHE = []
+CONOSCENZA_SITO_LAST_ERROR = None
 
 
 def get_conoscenza_sito():
+    global CONOSCENZA_SITO_LAST_ERROR
     if CONOSCENZA_SITO_CACHE:
         return CONOSCENZA_SITO_CACHE
     for path in CONOSCENZA_SITO_CANDIDATES:
@@ -384,8 +386,10 @@ def get_conoscenza_sito():
             if items:
                 CONOSCENZA_SITO_CACHE.extend(items)
                 return items
+            CONOSCENZA_SITO_LAST_ERROR = f"chiave 'conoscenza_sito' assente o vuota in {path}"
         except Exception as e:
-            print(f"Errore lettura conoscenza_sito.json ({path}): {e}")
+            CONOSCENZA_SITO_LAST_ERROR = f"errore parsing {path}: {type(e).__name__}: {e}"
+            print(CONOSCENZA_SITO_LAST_ERROR)
     return []
 
 
@@ -787,6 +791,7 @@ def health():
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
         "conoscenza_sito": len(get_conoscenza_sito()),
+        "conoscenza_sito_error": CONOSCENZA_SITO_LAST_ERROR,
         "paths": [{"path": p, "exists": os.path.isfile(p)} for p in CONOSCENZA_SITO_CANDIDATES],
         "cwd": os.getcwd(),
         "file": os.path.dirname(__file__)
