@@ -1052,6 +1052,7 @@ const navRegister = document.getElementById('navRegister');
 const navHome = document.getElementById('navHome');
 
 let currentUser = null;
+let authToken = null;
 let welcomeShown = false;
 let isLoginMode = false;
 
@@ -1089,6 +1090,7 @@ navLogout.addEventListener('click', async () => {
     credentials: 'include'
   });
   currentUser = null;
+  authToken = null;
   welcomeShown = false;
   chatBox.innerHTML = '<div class="welcome">Accedi o registrati per iniziare a parlare con Gianluca AI.</div>';
   userInput.value = '';
@@ -1122,6 +1124,7 @@ changeUserBtn.addEventListener('click', async () => {
     credentials: 'include'
   });
   currentUser = null;
+  authToken = null;
   welcomeShown = false;
   chatBox.innerHTML = '<div class="welcome">Accedi o registrati per iniziare a parlare con Gianluca AI.</div>';
   userInput.value = '';
@@ -1322,9 +1325,11 @@ async function sendMessage() {
   showTyping();
 
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const res = await fetch(`${API_URL}/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       credentials: 'include',
       body: JSON.stringify({ text, user: currentUser })
     });
@@ -1361,6 +1366,7 @@ async function tryTokenLogin() {
       if (window.history.replaceState) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
+      authToken = token;
       setActiveUser(data.user);
       openChat();
       return true;
