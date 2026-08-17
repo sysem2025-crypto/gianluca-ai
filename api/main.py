@@ -362,16 +362,31 @@ def is_personal_question(message: str) -> bool:
 
 
 CONOSCENZA_SITO_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "conoscenza_sito.json")
+CONOSCENZA_SITO_CANDIDATES = [
+    CONOSCENZA_SITO_PATH,
+    os.path.join(os.path.dirname(__file__), "data", "conoscenza_sito.json"),
+    os.path.join(os.getcwd(), "data", "conoscenza_sito.json"),
+    os.path.join(os.getcwd(), "api", "..", "data", "conoscenza_sito.json"),
+]
+CONOSCENZA_SITO_CACHE = []
 
 
 def get_conoscenza_sito():
-    try:
-        with open(CONOSCENZA_SITO_PATH, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-        return data.get("conoscenza_sito", [])
-    except Exception as e:
-        print(f"Errore lettura conoscenza_sito.json: {e}")
-        return []
+    if CONOSCENZA_SITO_CACHE:
+        return CONOSCENZA_SITO_CACHE
+    for path in CONOSCENZA_SITO_CANDIDATES:
+        try:
+            if not os.path.isfile(path):
+                continue
+            with open(path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            items = data.get("conoscenza_sito", [])
+            if items:
+                CONOSCENZA_SITO_CACHE.extend(items)
+                return items
+        except Exception as e:
+            print(f"Errore lettura conoscenza_sito.json ({path}): {e}")
+    return []
 
 
 def build_system_prompt(user):
@@ -768,7 +783,7 @@ def auth_token_login():
 
 @app.route("/api/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()})
+    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat(), "conoscenza_sito": len(get_conoscenza_sito())})
 
 
 @app.route("/api/debug", methods=["GET"])
