@@ -1,4 +1,5 @@
 import smtplib
+import json
 from email.mime.text import MIMEText
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
